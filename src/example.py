@@ -14,6 +14,10 @@ def connectionListener(connected, info):
         cond.notify()
 
 def main():
+
+    if (len(sys.argv)>1):
+        hedge.tty= sys.argv[1]
+
     hedge = MarvelmindHedge(tty = "/dev/ttyACM0", adr=None, debug=False) # create MarvelmindHedge thread
 
     cond = threading.Condition()
@@ -31,9 +35,8 @@ def main():
     # Insert your processing code here
     print("Connected!")
 
-    
-    if (len(sys.argv)>1):
-        hedge.tty= sys.argv[1]
+    table = NetworkTablesInstance.getTable('SmartDashboard')
+
     
     hedge.start() # start thread
     while True:
@@ -43,6 +46,9 @@ def main():
 
             if (hedge.positionUpdated):
                 hedge.print_position()
+                table.putFloat("HedgePosX", hedge.position()[0])
+                table.putFloat("HedgePosY", hedge.position()[1])
+                table.putInt("HedgeTimestamp", int(hedge.position()[5] % 1000)) # time in MS
                 
             if (hedge.distancesUpdated):
                 hedge.print_distances()
