@@ -1,9 +1,36 @@
 from marvelmind import MarvelmindHedge
 from time import sleep
+import threading
+
+from networktables import NetworkTables
+
 import sys
+
+
+def connectionListener(connected, info):
+    print(info, '; Connected=%s' % connected)
+    with cond:
+        notified[0] = True
+        cond.notify()
 
 def main():
     hedge = MarvelmindHedge(tty = "/dev/ttyACM0", adr=None, debug=False) # create MarvelmindHedge thread
+
+    cond = threading.Condition()
+    notified = [False]
+
+    # TODO: Add correect IP here
+    NetworkTables.initialize(server='10.xx.xx.2')
+    NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
+
+    with cond:
+        print("Waiting for NetworkTables connection...")
+        if not notified[0]:
+            cond.wait()
+
+    # Insert your processing code here
+    print("Connected!")
+
     
     if (len(sys.argv)>1):
         hedge.tty= sys.argv[1]
