@@ -7,6 +7,9 @@ from networktables import NetworkTables
 import sys
 
 
+cond = threading.Condition()
+notified = [False]
+
 def connectionListener(connected, info):
     print(info, '; Connected=%s' % connected)
     with cond:
@@ -18,13 +21,10 @@ def main():
     if (len(sys.argv)>1):
         hedge.tty= sys.argv[1]
 
-    hedge = MarvelmindHedge(tty = "/dev/ttyACM0", adr=None, debug=False) # create MarvelmindHedge thread
-
-    cond = threading.Condition()
-    notified = [False]
+    hedge = MarvelmindHedge(tty = "/dev/tty.usbmodem2063348E52321", adr=None, debug=False) # create MarvelmindHedge thread
 
     # TODO: Add correect IP here
-    NetworkTables.initialize(server='10.xx.xx.2')
+    NetworkTables.initialize(server='10.30.5.2')
     NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
     with cond:
@@ -35,7 +35,7 @@ def main():
     # Insert your processing code here
     print("Connected!")
 
-    table = NetworkTablesInstance.getTable('SmartDashboard')
+    table = NetworkTables.getTable('SmartDashboard')
 
     
     hedge.start() # start thread
@@ -46,9 +46,9 @@ def main():
 
             if (hedge.positionUpdated):
                 hedge.print_position()
-                table.putFloat("HedgePosX", hedge.position()[0])
-                table.putFloat("HedgePosY", hedge.position()[1])
-                table.putInt("HedgeTimestamp", int(hedge.position()[5] % 1000)) # time in MS
+                table.putNumberArray("HedgePos", [hedge.position()[1], hedge.position()[2], hedge.position()[4]]) # X, Y, angle
+                table.putNumber("HedgePosZ", hedge.position()[3])
+                table.putNumber("HedgeTimestamp", hedge.position()[5])
                 
             if (hedge.distancesUpdated):
                 hedge.print_distances()
